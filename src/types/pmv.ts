@@ -32,11 +32,13 @@ export interface SyncPayload {
   mensagensGreen: string[];
   r_modo: 'fixed' | 'slide' | 'scroll';
   r_cor: number; // RGB565 integer
+  r_fnd?: number; // RGB565 integer
   r_tam: number;
   r_align?: 'left' | 'center';
   r_valign?: 'top' | 'center' | 'bottom';
   g_modo: 'fixed' | 'slide' | 'scroll';
   g_cor: number; // RGB565 integer
+  g_fnd?: number; // RGB565 integer
   g_tam: number;
   g_align?: 'left' | 'center';
   g_valign?: 'top' | 'center' | 'bottom';

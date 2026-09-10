@@ -3,7 +3,7 @@ import { DeviceMemoryConfig, DeviceStatus, PhaseConfig } from '../types/pmv';
 import { P10Preview } from './P10Preview';
 import { hexToRgb, PALETTE } from '../utils/colors';
 import { mqttService } from '../services/mqttService';
-import { X, Send, Sliders, Type, Palette, AlignCenter, Clock, CheckCircle2, Smile, ArrowRight, RotateCw, ArrowLeft, Lock, ShieldAlert } from 'lucide-react';
+import { X, Send, Sliders, Type, Palette, Paintbrush, AlignCenter, Clock, CheckCircle2, Smile, ArrowRight, RotateCw, ArrowLeft, Lock, ShieldAlert } from 'lucide-react';
 
 interface ControlPanelProps {
   deviceId: string;
@@ -473,26 +473,78 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         </div>
 
-        {/* Text Color Picker */}
-        <div>
-          <label className="text-xs font-bold text-slate-600 block mb-1.5 flex items-center gap-1">
-            <Palette className="w-3.5 h-3.5 text-blue-600" /> Cor dos LEDs (Texto)
-          </label>
-          <div className="flex gap-2 flex-wrap">
-            {PALETTE.filter((p) => p.hex !== '#000000').map((p) => (
-              <button
-                key={p.hex}
-                title={p.label}
-                onClick={() => updatePhase({ cor: p.hex })}
-                style={{ backgroundColor: p.hex }}
-                className={`w-8 h-8 rounded-lg transition-transform border-2 ${
-                  phaseConfig.cor?.toLowerCase() === p.hex.toLowerCase()
-                    ? 'border-blue-600 scale-110 shadow-md ring-2 ring-blue-300'
-                    : 'border-slate-300 hover:scale-105 shadow-xs'
-                }`}
-              />
-            ))}
+        {/* Cores: Texto e Fundo da Matriz */}
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-4 shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Text Color Picker */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                  <Palette className="w-3.5 h-3.5 text-blue-600" /> Cor dos LEDs (Texto)
+                </label>
+                <span className="text-[11px] font-mono text-slate-500 font-semibold">
+                  {PALETTE.find((p) => p.hex.toLowerCase() === phaseConfig.cor?.toLowerCase())?.label || phaseConfig.cor}
+                </span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {PALETTE.filter((p) => p.hex !== '#000000').map((p) => (
+                  <button
+                    key={p.hex}
+                    type="button"
+                    title={p.label}
+                    onClick={() => updatePhase({ cor: p.hex })}
+                    style={{ backgroundColor: p.hex }}
+                    className={`w-7 h-7 rounded-lg transition-transform border-2 ${
+                      phaseConfig.cor?.toLowerCase() === p.hex.toLowerCase()
+                        ? 'border-blue-600 scale-110 shadow-md ring-2 ring-blue-300'
+                        : 'border-slate-300 hover:scale-105 shadow-xs'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Background Color Picker */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                  <Paintbrush className="w-3.5 h-3.5 text-indigo-600" /> Cor de Fundo (Matriz)
+                </label>
+                <span className="text-[11px] font-mono text-slate-500 font-semibold">
+                  {(phaseConfig.fundo || '#000000').toLowerCase() === '#000000'
+                    ? 'Preto (Apagado)'
+                    : PALETTE.find((p) => p.hex.toLowerCase() === phaseConfig.fundo?.toLowerCase())?.label || phaseConfig.fundo}
+                </span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {PALETTE.map((p) => (
+                  <button
+                    key={p.hex}
+                    type="button"
+                    title={p.hex === '#000000' ? 'Preto (LEDs de fundo desligados - Padrão)' : p.label}
+                    onClick={() => updatePhase({ fundo: p.hex })}
+                    style={{ backgroundColor: p.hex }}
+                    className={`w-7 h-7 rounded-lg transition-transform border-2 relative flex items-center justify-center ${
+                      (phaseConfig.fundo || '#000000').toLowerCase() === p.hex.toLowerCase()
+                        ? 'border-indigo-600 scale-110 shadow-md ring-2 ring-indigo-300'
+                        : 'border-slate-300 hover:scale-105 shadow-xs'
+                    }`}
+                  >
+                    {p.hex === '#000000' && (
+                      <span className="text-[8px] font-bold text-slate-500 select-none">OFF</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+
+          {/* Aviso se texto e fundo forem iguais */}
+          {phaseConfig.cor?.toLowerCase() === (phaseConfig.fundo || '#000000').toLowerCase() && (
+            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-2">
+              <span className="font-bold">⚠️ Atenção:</span> A cor do texto e a cor de fundo estão idênticas. O texto pode ficar invisível no painel.
+            </div>
+          )}
         </div>
 
         {/* Speed setting */}

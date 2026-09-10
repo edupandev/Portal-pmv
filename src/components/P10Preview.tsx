@@ -526,6 +526,11 @@ export const P10Preview: React.FC<P10PreviewProps> = ({ config, speed = 3000, is
               Tela {currentSlide + 1} de {totalSlides}
             </span>
           )}
+          {config.fundo && config.fundo.toLowerCase() !== '#000000' && (
+            <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Fundo Ativo
+            </span>
+          )}
           <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
             {config.modo?.toUpperCase() || 'FIXO'} • {config.align?.toUpperCase() || 'CENTRO'}
           </span>
