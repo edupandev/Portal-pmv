@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrokerOption, DeviceMemoryConfig, DeviceStatus, SyncPayload } from './types/pmv';
 import { BROKER_OPTIONS, mqttService } from './services/mqttService';
-import { virtualEsp32 } from './services/virtualEsp32';
 import { rgb565ToHex } from './utils/colors';
 
 import { Header } from './components/Header';
@@ -9,8 +8,6 @@ import { MapView } from './components/MapView';
 import { ControlPanel } from './components/ControlPanel';
 import { LoginModal } from './components/LoginModal';
 import { BrokerSettingsModal } from './components/BrokerSettingsModal';
-import { Esp32DiagnosticModal } from './components/Esp32DiagnosticModal';
-import { MqttConsole } from './components/MqttConsole';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -25,9 +22,6 @@ export default function App() {
 
   // Modals & Panels
   const [showBrokerModal, setShowBrokerModal] = useState(false);
-  const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
-  const [showConsoleModal, setShowConsoleModal] = useState(false);
-  const [isSimRunning, setIsSimRunning] = useState(false);
 
   // Devices & Memory
   const [devices, setDevices] = useState<Record<string, DeviceStatus>>({});
@@ -181,16 +175,6 @@ export default function App() {
     mqttService.connect(broker);
   };
 
-  const handleToggleSimulator = () => {
-    if (isSimRunning) {
-      virtualEsp32.stop();
-      setIsSimRunning(false);
-    } else {
-      virtualEsp32.start();
-      setIsSimRunning(true);
-    }
-  };
-
   const handleUpdateMemory = (newMem: DeviceMemoryConfig) => {
     if (!selectedDeviceId) return;
     setDevicesMemory((prev) => {
@@ -216,11 +200,9 @@ export default function App() {
       <Header
         currentBroker={currentBroker}
         connectionStatus={connectionStatus}
-        isSimRunning={isSimRunning}
-        onToggleSimulator={handleToggleSimulator}
+        selectedDeviceId={selectedDeviceId}
         onOpenBrokerSettings={() => setShowBrokerModal(true)}
-        onOpenDiagnostics={() => setShowDiagnosticModal(true)}
-        onOpenConsole={() => setShowConsoleModal(true)}
+        onBackToMap={() => setSelectedDeviceId(null)}
         onLogout={handleLogout}
         currentUser={currentUser}
       />
@@ -233,7 +215,7 @@ export default function App() {
           onSelectDevice={(id) => setSelectedDeviceId(id)}
         />
 
-        {/* Selected Device Drawer Panel */}
+        {/* Selected Device Modal (Centralized Configuration) */}
         {selectedDeviceId && (
           <ControlPanel
             deviceId={selectedDeviceId}
@@ -251,7 +233,6 @@ export default function App() {
           currentBroker={currentBroker}
           onSuccess={handleLoginSuccess}
           onOpenBrokerSettings={() => setShowBrokerModal(true)}
-          onOpenDiagnostics={() => setShowDiagnosticModal(true)}
         />
       )}
 
@@ -262,16 +243,6 @@ export default function App() {
           onSelectBroker={handleSelectBroker}
           onClose={() => setShowBrokerModal(false)}
         />
-      )}
-
-      {/* ESP32 Diagnostic & Complete Code Modal */}
-      {showDiagnosticModal && (
-        <Esp32DiagnosticModal onClose={() => setShowDiagnosticModal(false)} />
-      )}
-
-      {/* MQTT Packet Inspector Console */}
-      {showConsoleModal && (
-        <MqttConsole onClose={() => setShowConsoleModal(false)} />
       )}
     </div>
   );

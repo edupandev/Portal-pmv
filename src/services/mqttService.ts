@@ -51,6 +51,10 @@ class MqttService {
     this.connect(this.currentBroker);
   }
 
+  public isConnected(): boolean {
+    return Boolean(this.client && this.client.connected && !(this.client as any).disconnecting);
+  }
+
   public getBrowserId(): string {
     return this.browserId;
   }
@@ -106,9 +110,12 @@ class MqttService {
   public connect(broker: BrokerOption) {
     if (this.client) {
       try {
-        this.client.end(true);
+        const prevClient = this.client;
+        this.client = null;
+        prevClient.removeAllListeners();
+        prevClient.end(true);
       } catch (e) {
-        console.error(e);
+        // Ignore cleanup errors
       }
     }
 
@@ -116,37 +123,63 @@ class MqttService {
     this.notifyStatus('connecting');
 
     try {
-      this.client = mqtt.connect(broker.webUrl, {
+      const client = mqtt.connect(broker.webUrl, {
         clientId: `PMV_WebClient_${Math.random().toString(16).slice(2, 8)}`,
         clean: true,
         connectTimeout: 10000,
         reconnectPeriod: 4000,
+        resubscribe: true,
       });
 
-      this.client.on('connect', () => {
+      this.client = client;
+
+      client.on('connect', () => {
+        if (this.client !== client) return;
         this.notifyStatus('connected');
-        this.client?.subscribe(['painel_led_status', 'painel_led_sync', 'auth/response', 'painel_led_sync_request'], (err) => {
-          if (err) console.error('Subscription error', err);
-        });
 
-        // Broadcast sync request
-        this.requestSync('all');
+        client.subscribe(
+          ['painel_led_status', 'painel_led_sync', 'auth/response', 'painel_led_sync_request'],
+          { qos: 0 },
+          (err) => {
+            if (err && !err.message?.includes('disconnecting') && !err.message?.includes('offline')) {
+              console.warn('MQTT subscription error:', err.message);
+            }
+          }
+        );
+
+        // Broadcast initial sync request after a brief delay
+        setTimeout(() => {
+          if (this.isConnected()) {
+            this.requestSync('all');
+          }
+        }, 300);
       });
 
-      this.client.on('error', (err) => {
-        console.warn('MQTT Connection error:', err);
+      client.on('error', (err) => {
+        if (this.client !== client) return;
+        console.warn('MQTT connection notice:', err.message);
         this.notifyStatus('error', err.message);
       });
 
-      this.client.on('offline', () => {
+      client.on('offline', () => {
+        if (this.client !== client) return;
         this.notifyStatus('disconnected');
       });
 
-      this.client.on('reconnect', () => {
+      client.on('close', () => {
+        if (this.client !== client) return;
+        if (this.connectionStatus === 'connected') {
+          this.notifyStatus('disconnected');
+        }
+      });
+
+      client.on('reconnect', () => {
+        if (this.client !== client) return;
         this.notifyStatus('connecting');
       });
 
-      this.client.on('message', (topic, message) => {
+      client.on('message', (topic, message) => {
+        if (this.client !== client) return;
         const payloadStr = message.toString();
 
         let type: MqttPacketLog['type'] = 'other';
@@ -210,17 +243,27 @@ class MqttService {
   public sendDeviceCommand(deviceId: string, payloadObj: any) {
     const topic = `painel_led/${deviceId}`;
     const payload = JSON.stringify(payloadObj);
-    this.publish(topic, payload, 'command');
+    return this.publish(topic, payload, 'command');
   }
 
-  public publish(topic: string, payload: string, type: MqttPacketLog['type'] = 'other', retain: boolean = false) {
-    if (!this.client || !this.client.connected) {
-      console.warn('MQTT client is not connected. Attempting publish anyway...');
+  public publish(topic: string, payload: string, type: MqttPacketLog['type'] = 'other', retain: boolean = false): boolean {
+    if (!this.isConnected()) {
+      return false;
     }
     this.logPacket(topic, 'out', payload, type);
-    this.client?.publish(topic, payload, { qos: 0, retain }, (err) => {
-      if (err) console.error('Error publishing to topic', topic, err);
-    });
+    try {
+      this.client?.publish(topic, payload, { qos: 0, retain }, (err) => {
+        if (err && !err.message?.includes('disconnecting') && !err.message?.includes('offline')) {
+          console.warn(`MQTT publish error on ${topic}:`, err.message);
+        }
+      });
+      return true;
+    } catch (err: any) {
+      if (!err?.message?.includes('disconnecting') && !err?.message?.includes('offline')) {
+        console.warn('MQTT publish exception:', err);
+      }
+      return false;
+    }
   }
 }
 

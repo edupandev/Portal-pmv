@@ -7,14 +7,12 @@ interface LoginModalProps {
   currentBroker: BrokerOption;
   onSuccess: (user: string) => void;
   onOpenBrokerSettings: () => void;
-  onOpenDiagnostics: () => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
   currentBroker,
   onSuccess,
   onOpenBrokerSettings,
-  onOpenDiagnostics,
 }) => {
   const [user, setUser] = useState('geral3');
   const [pass, setPass] = useState('123');
@@ -29,10 +27,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         setStatusMsg('Autenticado com sucesso!');
         setTimeout(() => {
           onSuccess(user);
-        }, 500);
+        }, 400);
       } else {
         setIsAuthenticating(false);
-        setErrorMsg(res.reason || 'Usuário ou senha incorretos informados pelo hardware');
+        setErrorMsg(res.reason || 'Usuário ou senha incorretos.');
       }
     });
 
@@ -48,24 +46,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     setErrorMsg(null);
     setIsAuthenticating(true);
-    setStatusMsg(`Aguardando confirmação do ESP32 via MQTT (${currentBroker.name})...`);
+    setStatusMsg(`Autenticando via MQTT (${currentBroker.name})...`);
 
     mqttService.sendAuthRequest(user.trim(), pass.trim());
 
-    // Timeout fallback after 6s
+    // Timeout fallback after 5s
     setTimeout(() => {
       if (isAuthenticating) {
-        setStatusMsg('Sem resposta do ESP32 no tempo limite. Você pode entrar em Modo Direto ou verificar o Broker.');
+        setIsAuthenticating(false);
+        setErrorMsg('Sem resposta do broker ou painel no tempo limite. Verifique as configurações de rede.');
       }
-    }, 6000);
-  };
-
-  const handleBypassDemo = () => {
-    onSuccess(user || 'geral3');
+    }, 5000);
   };
 
   return (
-    <div className="fixed inset-0 z-[4000] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[4000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Subtle decorative background tints */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-100 rounded-full blur-3xl pointer-events-none" />
@@ -79,7 +74,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <h1 className="text-xl font-black text-slate-900 tracking-wider">
             SACC <strong className="text-blue-600">LOGIN</strong>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">Sistema de Controle de Painéis PMV P10</p>
+          <p className="text-xs text-slate-500 mt-1">Sistema de Controle de Painéis PMV</p>
         </div>
 
         {/* Form */}
@@ -129,36 +124,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             disabled={isAuthenticating}
             className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition disabled:opacity-50 text-sm"
           >
-            {isAuthenticating ? 'VERIFICANDO CREDENCIAIS NO ESP32...' : 'ENTRAR NO SISTEMA'}
+            {isAuthenticating ? 'AUTENTICANDO...' : 'ENTRAR NO SISTEMA'}
             {!isAuthenticating && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
 
-        {/* Demo / Bypass for testing without physical ESP32 */}
-        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
+        {/* Footer info */}
+        <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <button
-            type="button"
-            onClick={handleBypassDemo}
-            className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-slate-200 transition shadow-xs"
+            onClick={onOpenBrokerSettings}
+            className="hover:text-blue-600 flex items-center gap-1 transition underline decoration-dotted"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            Entrar em Modo Direto (Sem aguardar ESP32)
+            <Server className="w-3.5 h-3.5" /> Broker: {currentBroker.name.split(' ')[0]}
           </button>
-
-          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-            <button
-              onClick={onOpenBrokerSettings}
-              className="hover:text-blue-600 flex items-center gap-1 transition underline decoration-dotted"
-            >
-              <Server className="w-3 h-3" /> Broker: {currentBroker.name.split(' ')[0]}
-            </button>
-            <button
-              onClick={onOpenDiagnostics}
-              className="hover:text-amber-600 transition underline decoration-dotted"
-            >
-              Código C++ / Dúvidas?
-            </button>
-          </div>
+          <span className="font-mono text-[11px] text-slate-400">SACC v2.4</span>
         </div>
       </div>
     </div>

@@ -118,6 +118,7 @@ class VirtualEsp32Hardware {
   }
 
   public publishHeartbeat() {
+    if (!this.isRunning || !mqttService.isConnected()) return;
     const payload = JSON.stringify({
       dispositivo: this.deviceName,
       vermelho: this.isRedPhase,
@@ -129,6 +130,7 @@ class VirtualEsp32Hardware {
   }
 
   public publishSync() {
+    if (!this.isRunning || !mqttService.isConnected()) return;
     const payload = JSON.stringify({
       target: this.deviceName,
       mensagensRed: this.redMsgs,

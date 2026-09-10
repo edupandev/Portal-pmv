@@ -2,23 +2,19 @@ import React from 'react';
 import { BrokerOption } from '../types/pmv';
 import {
   Server,
-  Terminal,
-  Cpu,
   LogOut,
-  Radio,
   RefreshCw,
+  MapPin,
+  Sliders,
 } from 'lucide-react';
-import { virtualEsp32 } from '../services/virtualEsp32';
 import { mqttService } from '../services/mqttService';
 
 interface HeaderProps {
   currentBroker: BrokerOption;
   connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
-  isSimRunning: boolean;
-  onToggleSimulator: () => void;
+  selectedDeviceId: string | null;
   onOpenBrokerSettings: () => void;
-  onOpenDiagnostics: () => void;
-  onOpenConsole: () => void;
+  onBackToMap: () => void;
   onLogout: () => void;
   currentUser: string;
 }
@@ -26,11 +22,9 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   currentBroker,
   connectionStatus,
-  isSimRunning,
-  onToggleSimulator,
+  selectedDeviceId,
   onOpenBrokerSettings,
-  onOpenDiagnostics,
-  onOpenConsole,
+  onBackToMap,
   onLogout,
   currentUser,
 }) => {
@@ -40,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
         return (
           <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold shadow-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            MQTT Conectado
+            Conectado
           </span>
         );
       case 'connecting':
@@ -61,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 z-[1500] px-4 sm:px-6 flex items-center justify-between shadow-xs">
+    <header className="fixed top-0 inset-x-0 h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 z-[1500] px-4 sm:px-6 flex items-center justify-between shadow-xs">
       {/* Brand & App Title */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2.5">
@@ -75,12 +69,34 @@ export const Header: React.FC<HeaderProps> = ({
                 PMV CONTROLLER
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 hidden sm:block">Painel de Mensagens Variáveis • ESP32 Matrix</p>
+            <p className="text-[11px] text-slate-500 hidden sm:block">Painel de Mensagens Variáveis • Central do Operador</p>
           </div>
         </div>
       </div>
 
-      {/* Right Controls & Navigation */}
+      {/* Navigation / View state tabs */}
+      <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <button
+          onClick={onBackToMap}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+            !selectedDeviceId
+              ? 'bg-white text-blue-700 shadow-xs border border-slate-200/60'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <MapPin className="w-3.5 h-3.5 text-blue-600" />
+          <span>Mapa de PMVs</span>
+        </button>
+
+        {selectedDeviceId && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-blue-700 shadow-xs border border-slate-200/60 animate-in fade-in">
+            <Sliders className="w-3.5 h-3.5 text-blue-600" />
+            <span>Configurando: {selectedDeviceId}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Right Controls & Actions */}
       <div className="flex items-center gap-2 sm:gap-2.5">
         {/* Connection status indicator */}
         <div className="hidden md:flex">{getStatusBadge()}</div>
@@ -88,41 +104,11 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Sync request trigger button */}
         <button
           onClick={() => mqttService.requestSync('all')}
-          title="Requisitar Sincronização de todos os painéis"
+          title="Requisitar Sincronização dos painéis"
           className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition shadow-xs"
         >
           <RefreshCw className="w-4 h-4" />
         </button>
-
-        {/* Hardware Simulator Toggle */}
-        <button
-          onClick={onToggleSimulator}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition border shadow-xs ${
-            isSimRunning
-              ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-              : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-600'
-          }`}
-          title="Simula um ESP32 virtual para testar o site sem o hardware físico"
-        >
-          <Radio className={`w-3.5 h-3.5 ${isSimRunning ? 'text-indigo-600 animate-pulse' : ''}`} />
-          <span className="hidden lg:inline">Simulador ESP32:</span>
-          <span>{isSimRunning ? 'LIGADO' : 'DESLIGADO'}</span>
-        </button>
-
-        {/* If simulator is running, allow toggling physical PIN 32 (Red/Green Phase) */}
-        {isSimRunning && (
-          <button
-            onClick={() => virtualEsp32.togglePhase()}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition shadow-xs ${
-              virtualEsp32.isRedPhase
-                ? 'bg-rose-50 border-rose-300 text-rose-700'
-                : 'bg-emerald-50 border-emerald-300 text-emerald-700'
-            }`}
-            title="Alterna o pino físico PIN_STATUS do simulador"
-          >
-            Fase: {virtualEsp32.isRedPhase ? 'Vermelha' : 'Verde'}
-          </button>
-        )}
 
         {/* MQTT Broker Settings */}
         <button
@@ -135,34 +121,21 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="font-mono font-bold text-blue-700">{currentBroker.id.toUpperCase()}</span>
         </button>
 
-        {/* MQTT Inspector Console */}
-        <button
-          onClick={onOpenConsole}
-          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition shadow-xs"
-          title="Abrir Console MQTT em tempo real"
-        >
-          <Terminal className="w-4 h-4 text-emerald-600" />
-        </button>
-
-        {/* ESP32 Code & Diagnosis */}
-        <button
-          onClick={onOpenDiagnostics}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold transition shadow-xs"
-          title="Ver o código C++ corrigido do ESP32"
-        >
-          <Cpu className="w-3.5 h-3.5 text-amber-600" />
-          <span className="hidden sm:inline">Código ESP32</span>
-        </button>
-
-        {/* Logout */}
-        <button
-          onClick={onLogout}
-          className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 border border-slate-200 transition shadow-xs"
-          title={`Sair (${currentUser})`}
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+        {/* User Badge & Logout */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <span className="text-xs font-bold text-slate-700 px-2 hidden sm:inline">
+            {currentUser}
+          </span>
+          <button
+            onClick={onLogout}
+            className="p-1.5 rounded-lg hover:bg-rose-50 hover:text-rose-600 text-slate-500 transition"
+            title={`Sair (${currentUser})`}
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </header>
   );
 };
+

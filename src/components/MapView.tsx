@@ -26,10 +26,10 @@ export const MapView: React.FC<MapViewProps> = ({ devices, selectedDeviceId, onS
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Clean light map tiles (CartoDB Positron / Voyager)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // Free OpenStreetMap standard tiles (No API key required)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd',
+      attribution: '&copy; OpenStreetMap contributors',
     }).addTo(map);
 
     mapInstanceRef.current = map;

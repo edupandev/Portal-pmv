@@ -688,6 +688,13 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
   const char* target = doc["target"];
   if (target && strcmp(target, deviceName.c_str()) != 0 && strcmp(target, "all") != 0) return;
 
+  // Trava de Seguranca: Apenas aceita alteracoes de texto quando o sinal estiver Vermelho (PIN_STATUS == HIGH)
+  bool pinoAtivo = (digitalRead(PIN_STATUS) == HIGH);
+  if (!pinoAtivo) {
+    Serial.println("Comando rejeitado: Alteracao permitida apenas quando o sinal fisico estiver no VERMELHO.");
+    return;
+  }
+
   bool tipoAlerta = doc["alerta"] | false; 
   JsonArray msgs = doc["mensagens"].as<JsonArray>();
   ConfigFase *cfgAlvo = tipoAlerta ? &cfgRed : &cfgGreen;

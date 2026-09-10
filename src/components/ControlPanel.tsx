@@ -3,7 +3,7 @@ import { DeviceMemoryConfig, DeviceStatus, PhaseConfig } from '../types/pmv';
 import { P10Preview } from './P10Preview';
 import { hexToRgb, PALETTE } from '../utils/colors';
 import { mqttService } from '../services/mqttService';
-import { X, Send, Sliders, Type, Palette, AlignCenter, Clock, CheckCircle2, Smile, ArrowRight, RotateCw } from 'lucide-react';
+import { X, Send, Sliders, Type, Palette, AlignCenter, Clock, CheckCircle2, Smile, ArrowRight, RotateCw, ArrowLeft, Lock, ShieldAlert } from 'lucide-react';
 
 interface ControlPanelProps {
   deviceId: string;
@@ -208,68 +208,80 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   const maxLineLength = textLines.reduce((max, l) => Math.max(max, l.length), 0);
 
   return (
-    <div className="fixed inset-y-0 right-0 w-full sm:w-[500px] bg-white/98 backdrop-blur-xl border-l border-slate-200/90 text-slate-900 z-[2000] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-right duration-300">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/80">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-base font-black text-slate-900 tracking-wide uppercase">PAINEL PMV UNIVERSAL</h2>
-            <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200/60">
-              {deviceId}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-0.5">Controle de Mensagens, Emojis e Layout P8</p>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+    <div className="fixed inset-0 z-[2000] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+      <div className="bg-white border border-slate-200 text-slate-900 w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden my-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/90 shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition shadow-xs"
+            >
+              <ArrowLeft className="w-4 h-4 text-blue-600" />
+              <span>Voltar ao Mapa</span>
+            </button>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
-        {/* Hardware Status Card */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-3.5">
-            <div className="flex flex-col gap-1.5 p-2 bg-slate-900 rounded-xl border border-slate-800 shadow-inner">
-              <div
-                className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
-                  isHardwareRed ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-slate-700'
-                }`}
-              />
-              <div
-                className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
-                  !isHardwareRed ? 'bg-emerald-500 shadow-[0_0_10px_#22c55e]' : 'bg-slate-700'
-                }`}
-              />
-            </div>
             <div>
-              <div className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">ESTADO DO SEMÁFORO (PIN 32)</div>
-              <div className="text-sm font-bold text-slate-900">
-                {isOffline ? 'DESCONECTADO' : isHardwareRed ? 'FASE VERMELHA ATIVA' : 'FASE VERDE ATIVA'}
-              </div>
-              <div className="text-[11px] font-mono mt-0.5 flex items-center gap-1.5">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    isOffline ? 'bg-slate-400' : 'bg-emerald-500 animate-pulse'
-                  }`}
-                />
-                <span className={isOffline ? 'text-slate-500' : 'text-emerald-700 font-bold'}>
-                  {isOffline ? '● OFFLINE' : '● ONLINE (MQTT)'}
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-black text-slate-900 tracking-wide uppercase">CONFIGURAÇÃO DO PAINEL</h2>
+                <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200/60">
+                  {deviceId}
                 </span>
               </div>
+              <p className="text-xs text-slate-500">Controle Centralizado • Textos, Sprites P8 e LED</p>
             </div>
           </div>
-          <div className="text-right text-xs text-slate-500">
-            {deviceStatus?.rssi && (
-              <div className="font-mono bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-700 shadow-xs">
-                Sinal: {deviceStatus.rssi} dBm
-              </div>
-            )}
-          </div>
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Hardware Status Card */}
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-3.5">
+              <div className="flex flex-col gap-1.5 p-2 bg-slate-900 rounded-xl border border-slate-800 shadow-inner">
+                <div
+                  className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
+                    isHardwareRed ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-slate-700'
+                  }`}
+                />
+                <div
+                  className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
+                    !isHardwareRed ? 'bg-emerald-500 shadow-[0_0_10px_#22c55e]' : 'bg-slate-700'
+                  }`}
+                />
+              </div>
+              <div>
+                <div className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">ESTADO DO SEMÁFORO (PIN 32)</div>
+                <div className="text-sm font-bold text-slate-900">
+                  {isOffline ? 'DESCONECTADO' : isHardwareRed ? 'FASE VERMELHA ATIVA (ALTERAÇÕES LIBERADAS)' : 'FASE VERDE ATIVA (SINAL ABERTO)'}
+                </div>
+                <div className="text-[11px] font-mono mt-0.5 flex items-center gap-1.5">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isOffline ? 'bg-slate-400' : 'bg-emerald-500 animate-pulse'
+                    }`}
+                  />
+                  <span className={isOffline ? 'text-slate-500' : 'text-emerald-700 font-bold'}>
+                    {isOffline ? '● OFFLINE' : '● ONLINE (MQTT)'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="text-right text-xs text-slate-500">
+              {deviceStatus?.rssi && (
+                <div className="font-mono bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-700 shadow-xs">
+                  Sinal: {deviceStatus.rssi} dBm
+                </div>
+              )}
+            </div>
+          </div>
 
         {/* Live Matrix Canvas Preview */}
         <div>
@@ -523,5 +535,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </button>
       </div>
     </div>
+  </div>
   );
 };
