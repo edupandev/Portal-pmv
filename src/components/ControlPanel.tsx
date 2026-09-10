@@ -487,19 +487,23 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 </span>
               </div>
               <div className="flex gap-2 flex-wrap">
-                {PALETTE.filter((p) => p.hex !== '#000000').map((p) => (
+                {PALETTE.map((p) => (
                   <button
                     key={p.hex}
                     type="button"
-                    title={p.label}
+                    title={p.hex === '#000000' ? 'Preto (Desligado / Modo Invertido)' : p.label}
                     onClick={() => updatePhase({ cor: p.hex })}
                     style={{ backgroundColor: p.hex }}
-                    className={`w-7 h-7 rounded-lg transition-transform border-2 ${
+                    className={`w-7 h-7 rounded-lg transition-transform border-2 relative flex items-center justify-center ${
                       phaseConfig.cor?.toLowerCase() === p.hex.toLowerCase()
                         ? 'border-blue-600 scale-110 shadow-md ring-2 ring-blue-300'
                         : 'border-slate-300 hover:scale-105 shadow-xs'
                     }`}
-                  />
+                  >
+                    {p.hex === '#000000' && (
+                      <span className="text-[8px] font-bold text-slate-500 select-none">OFF</span>
+                    )}
+                  </button>
                 ))}
               </div>
             </div>
